@@ -806,8 +806,11 @@ async def get_all_drivers(request: Request):
     # Get queue status for each driver
     result = []
     for driver in drivers:
+        driver_id = driver.get("user_id")
+        if not driver_id:
+            continue
         queue_entry = await db.driver_queue.find_one(
-            {"driver_id": driver["user_id"], "status": "waiting"},
+            {"driver_id": driver_id, "status": "waiting"},
             {"_id": 0}
         )
         
@@ -904,6 +907,9 @@ async def get_all_drivers_with_distance(zone_id: str, request: Request):
     outside_zone_drivers = []
     
     for driver in drivers:
+        driver_id = driver.get("user_id")
+        if not driver_id:
+            continue
         location = driver.get("current_location", {})
         lat = location.get("latitude")
         lng = location.get("longitude")
@@ -917,7 +923,7 @@ async def get_all_drivers_with_distance(zone_id: str, request: Request):
             eta_minutes = calculate_eta_minutes(distance_meters)
         
         # Check if in queue
-        queue_entry = queue_by_driver.get(driver["user_id"])
+        queue_entry = queue_by_driver.get(driver_id)
         in_queue = queue_entry is not None
         
         # Check if actually in zone (geofence check)
@@ -926,8 +932,8 @@ async def get_all_drivers_with_distance(zone_id: str, request: Request):
             in_zone = is_driver_in_zone(lat, lng, zone)
         
         driver_info = {
-            "driver_id": driver["user_id"],
-            "driver_name": driver["name"],
+            "driver_id": driver_id,
+            "driver_name": driver.get("name", "Unknown"),
             "vehicle_class": driver.get("vehicle_class", "Unknown"),
             "photo": driver.get("driver_photo"),
             "latitude": lat,
